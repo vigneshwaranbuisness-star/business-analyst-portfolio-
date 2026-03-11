@@ -1,0 +1,235 @@
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Input } from './Input';
+import { Button } from './Button';
+import { Card } from './Card';
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, Transaction, TransactionType } from '@/src/types';
+import { X, DollarSign, Tag, FileText, Calendar, Upload, Paperclip, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
+
+const transactionSchema = z.object({
+  amount: z.string().min(1, 'Amount is required'),
+  category: z.string().min(1, 'Please select a category'),
+  description: z.string().min(1, 'Description is required'),
+  date: z.string().min(1, 'Date is required'),
+  type: z.enum(['income', 'expense']),
+});
+
+type TransactionFormValues = {
+  amount: string;
+  category: string;
+  description: string;
+  date: string;
+  type: 'income' | 'expense';
+};
+
+interface TransactionFormProps {
+  type: TransactionType;
+  initialData?: Transaction;
+  onSubmit: (values: any) => void;
+  onClose: () => void;
+  isLoading?: boolean;
+}
+
+const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, onSubmit, onClose, isLoading }) => {
+  const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<TransactionFormValues>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: initialData ? {
+      amount: initialData.amount.toString(),
+      category: initialData.category,
+      description: initialData.description,
+      date: initialData.date.split('T')[0],
+      type: initialData.type,
+    } : {
+      type: type,
+      date: new Date().toISOString().split('T')[0],
+    },
+  });
+
+  const [receiptBase64, setReceiptBase64] = React.useState<string | undefined>(initialData?.receiptUrl);
+  const [showSuccess, setShowSuccess] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("File size must be less than 2MB for local storage demo.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptBase64(reader.result as string);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const onFormSubmit = (data: TransactionFormValues) => {
+    onSubmit({
+      ...data,
+      amount: parseFloat(data.amount),
+      receiptUrl: receiptBase64
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
+      <Card className="w-full max-w-lg p-0 bg-zinc-950 border-zinc-900 shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="p-6 border-b border-zinc-900 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              'p-2 rounded-lg border',
+              type === 'income' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+            )}>
+              <DollarSign className="w-5 h-5" />
+            </div>
+            <h2 className="text-xl font-bold text-white tracking-tight">
+              {initialData ? 'Edit' : 'Add'} {type === 'income' ? 'Income' : 'Expense'}
+            </h2>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} className="text-zinc-500 hover:text-zinc-200">
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+
+        <form onSubmit={handleSubmit(onFormSubmit)} className="p-6 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="relative group">
+              <DollarSign className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+              <Input 
+                label="Amount" 
+                type="number" 
+                step="0.01"
+                placeholder="0.00" 
+                className="pl-10"
+                {...register('amount')}
+                error={errors.amount?.message}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                Category
+              </label>
+              <div className="relative group">
+                <Tag className="absolute left-3 top-3 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+                <select 
+                  className={cn(
+                    'flex h-10 w-full rounded-lg border border-zinc-800 bg-zinc-900 pl-10 pr-3 py-2 text-sm text-zinc-100 ring-offset-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 appearance-none',
+                    errors.category && 'border-rose-500'
+                  )}
+                  {...register('category')}
+                >
+                  <option value="">Select category</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              {errors.category && <p className="text-xs font-medium text-rose-500">{errors.category.message}</p>}
+            </div>
+          </div>
+
+          <div className="relative group">
+            <Calendar className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+            <Input 
+              label="Date" 
+              type="date" 
+              className="pl-10"
+              {...register('date')}
+              error={errors.date?.message}
+            />
+          </div>
+
+          <div className="relative group">
+            <FileText className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+            <Input 
+              label="Description" 
+              placeholder="What was this for?" 
+              className="pl-10"
+              {...register('description')}
+              error={errors.description?.message}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                Receipt / Bill (Optional)
+              </label>
+              {showSuccess && (
+                <div className="flex items-center gap-1.5 text-emerald-500 animate-in fade-in slide-in-from-right-2 duration-300">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Receipt uploaded successfully!</span>
+                </div>
+              )}
+            </div>
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              className={cn(
+                "group relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl transition-all cursor-pointer",
+                receiptBase64 
+                  ? "border-emerald-500/50 bg-emerald-500/5" 
+                  : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:bg-zinc-900"
+              )}
+            >
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*,.pdf"
+                className="hidden"
+              />
+              
+              {receiptBase64 ? (
+                <div className="flex flex-col items-center gap-2 p-4">
+                  <div className="p-2 rounded-full bg-emerald-500/20 text-emerald-500">
+                    <Paperclip className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Receipt Attached</p>
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReceiptBase64(undefined);
+                    }}
+                    className="text-[10px] text-zinc-500 hover:text-zinc-300 underline underline-offset-2"
+                  >
+                    Remove and replace
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 p-4">
+                  <div className="p-2 rounded-full bg-zinc-800 text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors">Click to upload receipt</p>
+                  <p className="text-[10px] text-zinc-600">Max size 2MB (Image or PDF)</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-2">
+            <Button type="submit" className="w-full h-11 font-bold uppercase tracking-widest" disabled={isLoading}>
+              {isLoading ? 'Saving...' : initialData ? 'Update Transaction' : 'Save Transaction'}
+            </Button>
+            <Button type="button" variant="outline" className="w-full h-11 font-bold uppercase tracking-widest" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+};
+
+export default TransactionForm;

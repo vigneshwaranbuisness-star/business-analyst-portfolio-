@@ -6,7 +6,7 @@ import { Input } from './Input';
 import { Button } from './Button';
 import { Card } from './Card';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, Transaction, TransactionType } from '@/src/types';
-import { X, DollarSign, Tag, FileText, Calendar, Upload, Paperclip, CheckCircle2 } from 'lucide-react';
+import { X, IndianRupee, Tag, FileText, Calendar, Upload, Paperclip, CheckCircle2, Plus } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
 const transactionSchema = z.object({
@@ -28,7 +28,7 @@ type TransactionFormValues = {
 interface TransactionFormProps {
   type: TransactionType;
   initialData?: Transaction;
-  onSubmit: (values: any) => void;
+  onSubmit: (values: any, stayOpen?: boolean) => void;
   onClose: () => void;
   isLoading?: boolean;
 }
@@ -36,7 +36,7 @@ interface TransactionFormProps {
 const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, onSubmit, onClose, isLoading }) => {
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   
-  const { register, handleSubmit, formState: { errors } } = useForm<TransactionFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
     defaultValues: initialData ? {
       amount: initialData.amount.toString(),
@@ -49,6 +49,18 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, on
       date: new Date().toISOString().split('T')[0],
     },
   });
+
+  const selectedCategory = watch('category');
+  const [customCategory, setCustomCategory] = React.useState('');
+  const [isOtherSelected, setIsOtherSelected] = React.useState(false);
+
+  React.useEffect(() => {
+    if (selectedCategory === 'Other') {
+      setIsOtherSelected(true);
+    } else {
+      setIsOtherSelected(false);
+    }
+  }, [selectedCategory]);
 
   const [receiptBase64, setReceiptBase64] = React.useState<string | undefined>(initialData?.receiptUrl);
   const [showSuccess, setShowSuccess] = React.useState(false);
@@ -72,12 +84,25 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, on
     }
   };
 
-  const onFormSubmit = (data: TransactionFormValues) => {
+  const onFormSubmit = (data: TransactionFormValues, stayOpen: boolean = false) => {
+    const finalCategory = data.category === 'Other' ? customCategory || 'Other' : data.category;
+    
     onSubmit({
       ...data,
+      category: finalCategory,
       amount: parseFloat(data.amount),
       receiptUrl: receiptBase64
-    });
+    }, stayOpen);
+
+    if (stayOpen) {
+      reset({
+        ...data,
+        amount: '',
+        description: '',
+      });
+      setCustomCategory('');
+      setReceiptBase64(undefined);
+    }
   };
 
   return (
@@ -89,7 +114,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, on
               'p-2 rounded-lg border',
               type === 'income' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
             )}>
-              <DollarSign className="w-5 h-5" />
+              <IndianRupee className="w-5 h-5" />
             </div>
             <h2 className="text-xl font-bold text-white tracking-tight">
               {initialData ? 'Edit' : 'Add'} {type === 'income' ? 'Income' : 'Expense'}
@@ -100,10 +125,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, on
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit(onFormSubmit)} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit((data) => onFormSubmit(data, false))} className="p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="relative group">
-              <DollarSign className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+              <IndianRupee className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
               <Input 
                 label="Amount" 
                 type="number" 
@@ -115,28 +140,51 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, on
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                Category
+            <div className="space-y-3 sm:col-span-2">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                Select Category
               </label>
-              <div className="relative group">
-                <Tag className="absolute left-3 top-3 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
-                <select 
-                  className={cn(
-                    'flex h-10 w-full rounded-lg border border-zinc-800 bg-zinc-900 pl-10 pr-3 py-2 text-sm text-zinc-100 ring-offset-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 appearance-none',
-                    errors.category && 'border-rose-500'
-                  )}
-                  {...register('category')}
-                >
-                  <option value="">Select category</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.label}
+                    type="button"
+                    onClick={() => setValue('category', cat.label)}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 group",
+                      selectedCategory === cat.label
+                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                    )}
+                  >
+                    <cat.icon className={cn(
+                      "w-6 h-6 mb-2 transition-transform duration-300 group-hover:scale-110",
+                      selectedCategory === cat.label ? "text-emerald-500" : "text-zinc-500 group-hover:text-zinc-400"
+                    )} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-center leading-tight">
+                      {cat.label}
+                    </span>
+                  </button>
+                ))}
               </div>
-              {errors.category && <p className="text-xs font-medium text-rose-500">{errors.category.message}</p>}
+              <input type="hidden" {...register('category')} />
+              {errors.category && <p className="text-xs font-medium text-rose-500 ml-1">{errors.category.message}</p>}
             </div>
           </div>
+
+          {isOtherSelected && (
+            <div className="relative group animate-in slide-in-from-top-2 duration-200">
+              <Plus className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+              <Input 
+                label="Custom Category" 
+                placeholder="Type your category name" 
+                className="pl-10"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           <div className="relative group">
             <Calendar className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
@@ -219,10 +267,28 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, on
           </div>
 
           <div className="flex flex-col gap-3 pt-2">
-            <Button type="submit" className="w-full h-11 font-bold uppercase tracking-widest" disabled={isLoading}>
-              {isLoading ? 'Saving...' : initialData ? 'Update Transaction' : 'Save Transaction'}
-            </Button>
-            <Button type="button" variant="outline" className="w-full h-11 font-bold uppercase tracking-widest" onClick={onClose}>
+            <div className="flex gap-3">
+              <Button 
+                type="submit" 
+                className="flex-1 h-11 font-bold uppercase tracking-widest" 
+                disabled={isLoading}
+                onClick={handleSubmit((data) => onFormSubmit(data, false))}
+              >
+                {isLoading ? 'Saving...' : initialData ? 'Update Transaction' : 'Save Transaction'}
+              </Button>
+              {!initialData && (
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  className="flex-1 h-11 font-bold uppercase tracking-widest border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10" 
+                  disabled={isLoading}
+                  onClick={handleSubmit((data) => onFormSubmit(data, true))}
+                >
+                  Save & Add Another
+                </Button>
+              )}
+            </div>
+            <Button type="button" variant="ghost" className="w-full h-11 font-bold uppercase tracking-widest text-zinc-500" onClick={onClose}>
               Cancel
             </Button>
           </div>

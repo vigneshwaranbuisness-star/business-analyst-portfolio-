@@ -17,7 +17,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
-const Settings: React.FC<{ transactions: any[] }> = ({ transactions }) => {
+interface SettingsProps {
+  transactions: any[];
+  onClearData: () => void;
+  onDeleteAccount: () => void;
+}
+
+const Settings: React.FC<SettingsProps> = ({ transactions, onClearData, onDeleteAccount }) => {
   const [activeSubTab, setActiveSubTab] = React.useState('General');
   const [notifications, setNotifications] = React.useState(true);
   const [emailAlerts, setEmailAlerts] = React.useState(true);
@@ -104,7 +110,10 @@ const Settings: React.FC<{ transactions: any[] }> = ({ transactions }) => {
                     <ChevronRight className="w-4 h-4 text-zinc-700 group-hover:text-zinc-400 transition-colors" />
                   </div>
                 </Card>
-                <Card className="p-4 bg-zinc-950 border-zinc-900 hover:border-rose-500/30 transition-all cursor-pointer group">
+                <Card 
+                  onClick={onClearData}
+                  className="p-4 bg-zinc-950 border-zinc-900 hover:border-rose-500/30 transition-all cursor-pointer group"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center transition-colors">
@@ -301,7 +310,11 @@ const Settings: React.FC<{ transactions: any[] }> = ({ transactions }) => {
                     <h4 className="text-lg font-bold text-rose-500 mb-1">Delete Account</h4>
                     <p className="text-sm text-zinc-500">Permanently remove all your data and access to this dashboard.</p>
                   </div>
-                  <Button variant="danger" className="h-11 px-8 font-bold uppercase tracking-widest whitespace-nowrap">
+                  <Button 
+                    variant="danger" 
+                    className="h-11 px-8 font-bold uppercase tracking-widest whitespace-nowrap"
+                    onClick={onDeleteAccount}
+                  >
                     Delete Permanently
                   </Button>
                 </div>

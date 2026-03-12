@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { 
-  DollarSign, 
+  IndianRupee, 
   ArrowUpRight, 
   ArrowDownLeft, 
   Wallet, 
@@ -109,23 +109,23 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Income" 
-          value={`$${totalIncome.toLocaleString()}`} 
+          value={`₹${totalIncome.toLocaleString()}`} 
           trend={12.5} 
           icon={ArrowUpRight} 
           variant="emerald" 
         />
         <StatCard 
           title="Total Expenses" 
-          value={`$${totalExpense.toLocaleString()}`} 
+          value={`₹${totalExpense.toLocaleString()}`} 
           trend={-8.2} 
           icon={ArrowDownLeft} 
           variant="rose" 
         />
         <StatCard 
           title="Net Profit" 
-          value={`$${profit.toLocaleString()}`} 
+          value={`₹${profit.toLocaleString()}`} 
           trend={15.8} 
-          icon={DollarSign} 
+          icon={IndianRupee} 
           variant="sky" 
         />
         <StatCard 
@@ -172,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-white mb-1">${bill.amount}</p>
+                    <p className="text-sm font-bold text-white mb-1">₹{bill.amount}</p>
                     <div className={cn(
                       'w-1.5 h-1.5 rounded-full ml-auto',
                       bill.status === 'paid' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'

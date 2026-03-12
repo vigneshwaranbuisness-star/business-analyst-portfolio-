@@ -6,7 +6,7 @@ import { Input } from './Input';
 import { Button } from './Button';
 import { Card } from './Card';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, TransactionType } from '@/src/types';
-import { DollarSign, Tag, FileText, Calendar, Upload, Paperclip, CheckCircle2 } from 'lucide-react';
+import { IndianRupee, Tag, FileText, Calendar, Upload, Paperclip, CheckCircle2, Plus } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
 const transactionSchema = z.object({
@@ -34,13 +34,25 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onSubmit, isLoading }) => {
   const [type, setType] = React.useState<TransactionType>('income');
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<TransactionFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       type: 'income',
       date: new Date().toISOString().split('T')[0],
     },
   });
+
+  const selectedCategory = watch('category');
+  const [customCategory, setCustomCategory] = React.useState('');
+  const [isOtherSelected, setIsOtherSelected] = React.useState(false);
+
+  React.useEffect(() => {
+    if (selectedCategory === 'Other') {
+      setIsOtherSelected(true);
+    } else {
+      setIsOtherSelected(false);
+    }
+  }, [selectedCategory]);
 
   const [receiptBase64, setReceiptBase64] = React.useState<string | undefined>();
   const [showSuccess, setShowSuccess] = React.useState(false);
@@ -65,12 +77,16 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onSubmit, isLoading }) => {
   };
 
   const onFormSubmit = (data: TransactionFormValues) => {
+    const finalCategory = data.category === 'Other' ? customCategory || 'Other' : data.category;
+    
     onSubmit({
       ...data,
+      category: finalCategory,
       amount: parseFloat(data.amount),
       receiptUrl: receiptBase64
     });
     reset();
+    setCustomCategory('');
     setReceiptBase64(undefined);
   };
 
@@ -106,7 +122,7 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onSubmit, isLoading }) => {
         <input type="hidden" {...register('type')} value={type} />
         
         <div className="relative group">
-          <DollarSign className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+          <IndianRupee className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
           <Input 
             label="Amount" 
             type="number" 
@@ -118,27 +134,50 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onSubmit, isLoading }) => {
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+        <div className="space-y-3">
+          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
             Category
           </label>
-          <div className="relative group">
-            <Tag className="absolute left-3 top-3 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
-            <select 
-              className={cn(
-                'flex h-10 w-full rounded-lg border border-zinc-800 bg-zinc-900 pl-10 pr-3 py-2 text-sm text-zinc-100 ring-offset-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 appearance-none',
-                errors.category && 'border-rose-500'
-              )}
-              {...register('category')}
-            >
-              <option value="">Select category</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-3 gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat.label}
+                type="button"
+                onClick={() => setValue('category', cat.label)}
+                className={cn(
+                  "flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 group",
+                  selectedCategory === cat.label
+                    ? "bg-emerald-500/10 border-emerald-500 text-emerald-500"
+                    : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                )}
+              >
+                <cat.icon className={cn(
+                  "w-4 h-4 mb-1 transition-transform group-hover:scale-110",
+                  selectedCategory === cat.label ? "text-emerald-500" : "text-zinc-500 group-hover:text-zinc-400"
+                )} />
+                <span className="text-[8px] font-bold uppercase tracking-tighter text-center leading-tight truncate w-full">
+                  {cat.label}
+                </span>
+              </button>
+            ))}
           </div>
-          {errors.category && <p className="text-[10px] font-medium text-rose-500">{errors.category.message}</p>}
+          <input type="hidden" {...register('category')} />
+          {errors.category && <p className="text-[10px] font-medium text-rose-500 ml-1">{errors.category.message}</p>}
         </div>
+
+        {isOtherSelected && (
+          <div className="relative group animate-in slide-in-from-top-2 duration-200">
+            <Plus className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+            <Input 
+              label="Custom Category" 
+              placeholder="Type your category name" 
+              className="pl-10 h-10"
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
+              required
+            />
+          </div>
+        )}
 
         <div className="relative group">
           <Calendar className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />

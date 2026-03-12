@@ -15,13 +15,22 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ title, user }) => {
   const [showNotifications, setShowNotifications] = React.useState(false);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-
-  const notifications = [
-    { id: 1, title: 'New Transaction', desc: 'Received $1,200 from Client A', time: '2m ago', read: false },
+  const [notifications, setNotifications] = React.useState([
+    { id: 1, title: 'New Transaction', desc: 'Received ₹1,200 from Client A', time: '2m ago', read: false },
     { id: 2, title: 'Budget Alert', desc: 'You have reached 80% of your monthly budget', time: '1h ago', read: false },
     { id: 3, title: 'Report Ready', desc: 'Your weekly financial report is ready to view', time: '5h ago', read: true },
-  ];
+  ]);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const toggleRead = (id: number) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n));
+  };
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -54,49 +63,65 @@ const Header: React.FC<HeaderProps> = ({ title, user }) => {
         </div>
 
         <div className="flex items-center gap-4 border-l border-zinc-800 pl-6 relative" ref={dropdownRef}>
-          <button 
+          <Button 
+            variant="ghost"
+            size="icon"
             onClick={() => setShowNotifications(!showNotifications)}
             className={cn(
-              "relative p-2 rounded-lg transition-colors",
-              showNotifications ? "bg-emerald-500/10 text-emerald-500" : "hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100"
+              "relative rounded-xl transition-all duration-300",
+              showNotifications ? "bg-emerald-500/10 text-emerald-500 ring-2 ring-emerald-500/20" : "text-zinc-400 hover:text-zinc-100"
             )}
+            title="Notifications"
           >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-zinc-950" />
-          </button>
+            <Bell className={cn("w-5 h-5", unreadCount > 0 && "animate-ring")} />
+            {unreadCount > 0 && (
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-zinc-950 shadow-[0_0_10px_rgba(244,63,94,0.5)]" />
+            )}
+          </Button>
 
           {showNotifications && (
-            <Card className="absolute top-full right-0 mt-2 w-80 p-0 bg-zinc-950 border-zinc-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-              <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white uppercase tracking-widest">Notifications</h3>
-                <button 
+            <Card className="absolute top-full right-0 mt-4 w-85 p-0 bg-zinc-950 border-zinc-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 overflow-hidden z-50">
+              <div className="p-5 border-b border-zinc-900 flex items-center justify-between bg-zinc-900/20">
+                <div>
+                  <h3 className="text-xs font-bold text-white uppercase tracking-[0.2em] mb-1">Notifications</h3>
+                  <p className="text-[10px] text-zinc-500 font-medium">{unreadCount} unread messages</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
                   onClick={() => setShowNotifications(false)}
-                  className="text-zinc-500 hover:text-zinc-200 transition-colors"
+                  className="h-8 w-8 p-0 rounded-full hover:bg-zinc-800"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
-              <div className="max-h-[400px] overflow-y-auto">
+              <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
                 {notifications.length > 0 ? (
-                  <div className="divide-y divide-zinc-900">
+                  <div className="divide-y divide-zinc-900/50">
                     {notifications.map((n) => (
                       <div 
                         key={n.id} 
+                        onClick={() => toggleRead(n.id)}
                         className={cn(
-                          "p-4 hover:bg-zinc-900/50 transition-colors cursor-pointer group",
-                          !n.read && "bg-emerald-500/[0.02]"
+                          "p-5 hover:bg-zinc-900/80 transition-all cursor-pointer group relative",
+                          !n.read && "bg-emerald-500/[0.03]"
                         )}
                       >
-                        <div className="flex items-start justify-between gap-2 mb-1">
+                        {!n.read && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-emerald-500" />
+                        )}
+                        <div className="flex items-start justify-between gap-3 mb-1.5">
                           <p className={cn(
-                            "text-sm font-bold",
+                            "text-sm font-bold leading-tight",
                             n.read ? "text-zinc-400" : "text-white"
                           )}>
                             {n.title}
                           </p>
-                          {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5" />}
+                          {!n.read && (
+                            <div className="flex-shrink-0 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] mt-1" />
+                          )}
                         </div>
-                        <p className="text-xs text-zinc-500 mb-2 leading-relaxed">{n.desc}</p>
+                        <p className="text-xs text-zinc-500 mb-3 leading-relaxed line-clamp-2">{n.desc}</p>
                         <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
                           <Clock className="w-3 h-3" />
                           {n.time}
@@ -105,16 +130,33 @@ const Header: React.FC<HeaderProps> = ({ title, user }) => {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-8 text-center">
-                    <Bell className="w-8 h-8 text-zinc-800 mx-auto mb-3" />
-                    <p className="text-sm text-zinc-500">No new notifications</p>
+                  <div className="p-12 text-center">
+                    <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mx-auto mb-4 border border-zinc-800">
+                      <Bell className="w-8 h-8 text-zinc-700" />
+                    </div>
+                    <p className="text-sm text-zinc-400 font-bold mb-1">All Caught Up!</p>
+                    <p className="text-xs text-zinc-600">No new notifications at the moment.</p>
                   </div>
                 )}
               </div>
-              <div className="p-3 bg-zinc-900/50 border-t border-zinc-900">
-                <Button variant="ghost" size="sm" className="w-full text-[10px] font-bold uppercase tracking-widest gap-2">
+              <div className="p-4 bg-zinc-900/40 border-t border-zinc-900 flex gap-2">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="flex-1 text-[10px] font-bold uppercase tracking-widest gap-2 h-9"
+                  onClick={markAllAsRead}
+                  disabled={unreadCount === 0}
+                >
                   <Check className="w-3 h-3" />
-                  Mark all as read
+                  Mark all read
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-[10px] font-bold uppercase tracking-widest h-9 px-3 border-zinc-800"
+                  onClick={() => setNotifications([])}
+                >
+                  Clear
                 </Button>
               </div>
             </Card>

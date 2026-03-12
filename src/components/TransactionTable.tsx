@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Transaction } from '@/src/types';
+import { Transaction, INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '@/src/types';
 import { format } from 'date-fns';
 import { 
   ArrowUpRight, 
@@ -11,7 +11,10 @@ import {
   Search,
   Filter,
   X,
-  History
+  History,
+  ChevronLeft,
+  ChevronRight,
+  Tag
 } from 'lucide-react';
 import { Badge } from './Badge';
 import { Button } from './Button';
@@ -28,18 +31,29 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onEdi
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filterType, setFilterType] = React.useState<'all' | 'income' | 'expense'>('all');
   const [viewingReceipt, setViewingReceipt] = React.useState<string | null>(null);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 8;
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType]);
 
   const filteredTransactions = transactions.filter(t => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
       t.description.toLowerCase().includes(searchLower) || 
       t.category.toLowerCase().includes(searchLower) ||
+      t.id.toLowerCase().includes(searchLower) ||
       t.amount.toString().includes(searchTerm) ||
       format(new Date(t.date), 'MMM dd, yyyy').toLowerCase().includes(searchLower);
     
     const matchesType = filterType === 'all' || t.type === filterType;
     return matchesSearch && matchesType;
   });
+
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <Card className="p-0 overflow-hidden">
@@ -89,8 +103,8 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onEdi
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-900">
-            {filteredTransactions.length > 0 ? (
-              filteredTransactions.map((t) => (
+            {paginatedTransactions.length > 0 ? (
+              paginatedTransactions.map((t) => (
                 <tr key={t.id} className="group hover:bg-zinc-900/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -109,9 +123,24 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onEdi
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant={t.type === 'income' ? 'success' : 'danger'}>
-                      {t.category}
-                    </Badge>
+                    {(() => {
+                      const allCats = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES];
+                      const catInfo = allCats.find(c => c.label === t.category);
+                      const Icon = catInfo?.icon || Tag;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "p-1.5 rounded-md bg-zinc-900 border border-zinc-800",
+                            catInfo?.color || "text-zinc-500"
+                          )}>
+                            <Icon className="w-3 h-3" />
+                          </div>
+                          <Badge variant={t.type === 'income' ? 'success' : 'danger'}>
+                            {t.category}
+                          </Badge>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-xs font-medium text-zinc-400">
@@ -123,11 +152,11 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onEdi
                       'text-sm font-bold tracking-tight',
                       t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
                     )}>
-                      {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+                      {t.type === 'income' ? '+' : '-'}₹{t.amount.toLocaleString()}
                     </p>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                       {t.receiptUrl && (
                         <Button 
                           variant="ghost" 
@@ -145,7 +174,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onEdi
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="group-hover:hidden">
+                    <div className="group-hover:hidden sm:block hidden">
                       <MoreVertical className="w-4 h-4 text-zinc-600 ml-auto" />
                     </div>
                   </td>
@@ -164,6 +193,53 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onEdi
           </tbody>
         </table>
       </div>
+
+      {filteredTransactions.length > itemsPerPage && (
+        <div className="p-6 border-t border-zinc-900 flex items-center justify-between">
+          <p className="text-xs text-zinc-500 font-medium">
+            Showing <span className="text-white">{startIndex + 1}</span> to <span className="text-white">{Math.min(startIndex + itemsPerPage, filteredTransactions.length)}</span> of <span className="text-white">{filteredTransactions.length}</span> transactions
+          </p>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-8 w-8" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={cn(
+                    "w-8 h-8 rounded-lg text-[10px] font-bold transition-all",
+                    currentPage === page 
+                      ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" 
+                      : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"
+                  )}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-8 w-8" 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {viewingReceipt && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md animate-in fade-in duration-200">

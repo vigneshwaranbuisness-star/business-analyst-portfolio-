@@ -9,7 +9,8 @@ import {
   LogOut,
   TrendingUp,
   FileText,
-  Info
+  Info,
+  LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
@@ -28,6 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLogout }) 
     { id: 'analytics', label: 'Analytics', icon: PieChart },
     { id: 'insights', label: 'Insights', icon: TrendingUp },
     { id: 'files', label: 'Files', icon: FileText },
+    { id: 'support', label: 'Support', icon: LifeBuoy },
     { id: 'about', label: 'About', icon: Info },
   ];
 

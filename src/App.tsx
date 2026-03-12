@@ -8,6 +8,7 @@ import Analytics from './components/Analytics';
 import Insights from './components/Insights';
 import Files from './components/Files';
 import About from './components/About';
+import Support from './components/Support';
 import Settings from './components/Settings';
 import LoginForm from './components/LoginForm';
 import SignupForm from './components/SignupForm';
@@ -110,6 +111,21 @@ export default function App() {
     setActiveTab('dashboard');
   };
 
+  const handleClearData = () => {
+    setTransactions(MOCK_TRANSACTIONS);
+    localStorage.removeItem('sb_transactions');
+    alert('All transaction data has been reset to defaults.');
+  };
+
+  const handleDeleteAccount = () => {
+    if (confirm('Are you sure you want to permanently delete your account and all data? This action cannot be undone.')) {
+      setUser(null);
+      setTransactions([]);
+      localStorage.clear();
+      setActiveTab('dashboard');
+    }
+  };
+
   const handleAddTransaction = (type: TransactionType) => {
     setTransactionType(type);
     setEditingTransaction(undefined);
@@ -126,7 +142,7 @@ export default function App() {
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleTransactionSubmit = async (values: any) => {
+  const handleTransactionSubmit = async (values: any, stayOpen: boolean = false) => {
     if (!user) return;
 
     setLoading(true);
@@ -144,7 +160,9 @@ export default function App() {
       setTransactions(prev => [newTransaction, ...prev]);
     }
     
-    setIsTransactionFormOpen(false);
+    if (!stayOpen) {
+      setIsTransactionFormOpen(false);
+    }
     setLoading(false);
   };
 
@@ -259,11 +277,18 @@ export default function App() {
               <Files />
             </div>
           )}
+          {activeTab === 'support' && (
+            <Support />
+          )}
           {activeTab === 'about' && (
             <About />
           )}
           {activeTab === 'settings' && (
-            <Settings transactions={transactions} />
+            <Settings 
+              transactions={transactions} 
+              onClearData={handleClearData}
+              onDeleteAccount={handleDeleteAccount}
+            />
           )}
         </div>
       </main>

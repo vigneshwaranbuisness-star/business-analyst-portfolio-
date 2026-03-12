@@ -78,7 +78,7 @@ const Insights: React.FC<InsightsProps> = ({ transactions }) => {
             <h2 className="text-3xl font-bold text-white tracking-tight">Optimize Your Business Growth</h2>
             <p className="text-zinc-400 leading-relaxed max-w-2xl">
               Based on your recent transactions, we've identified that your business costs are trending upwards in the 'Business Cost' category. 
-              Reducing these by just 10% could increase your monthly profit by approximately <span className="text-emerald-500 font-bold">${(totalExpense * 0.1).toFixed(0)}</span>.
+              Reducing these by just 10% could increase your monthly profit by approximately <span className="text-emerald-500 font-bold">₹{(totalExpense * 0.1).toFixed(0)}</span>.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-all group">

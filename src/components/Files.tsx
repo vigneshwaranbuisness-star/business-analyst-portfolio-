@@ -30,6 +30,7 @@ interface FileItem {
 const Files: React.FC = () => {
   const [isUploading, setIsUploading] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [categorySearch, setCategorySearch] = React.useState('');
   const [selectedFile, setSelectedFile] = React.useState<FileItem | null>(null);
 
   const files: FileItem[] = [
@@ -39,22 +40,52 @@ const Files: React.FC = () => {
     { id: '4', name: 'Utility_Bill_March.pdf', type: 'PDF', size: '850 KB', date: '2024-03-05', category: 'Bills' },
   ];
 
-  const filteredFiles = files.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredFiles = files.filter(f => 
+    f.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    f.category.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const handleDownload = (file: FileItem) => {
+    // In a real app, this would fetch from a server or storage
+    // For this demo, we'll create a dummy text file with the file's name
+    const content = `This is a mock download for ${file.name}\nSize: ${file.size}\nCategory: ${file.category}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name.endsWith('.pdf') ? file.name.replace('.pdf', '.txt') : `${file.name}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 focus-within:ring-2 focus-within:ring-emerald-500 transition-all duration-200 flex-1 max-w-md">
-          <Search className="w-4 h-4 text-zinc-500" />
-          <input 
-            type="text" 
-            placeholder="Search files..." 
-            className="bg-transparent border-none outline-none text-sm text-zinc-200 placeholder:text-zinc-600 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 flex-1 max-w-2xl">
+          <div className="flex items-center gap-4 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 focus-within:ring-2 focus-within:ring-emerald-500 transition-all duration-200 flex-1">
+            <Search className="w-4 h-4 text-zinc-500" />
+            <input 
+              type="text" 
+              placeholder="Search by name..." 
+              className="bg-transparent border-none outline-none text-sm text-zinc-200 placeholder:text-zinc-600 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-4 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 focus-within:ring-2 focus-within:ring-emerald-500 transition-all duration-200 flex-1">
+            <Tag className="w-4 h-4 text-zinc-500" />
+            <input 
+              type="text" 
+              placeholder="Search by category..." 
+              className="bg-transparent border-none outline-none text-sm text-zinc-200 placeholder:text-zinc-600 w-full"
+              value={categorySearch}
+              onChange={(e) => setCategorySearch(e.target.value)}
+            />
+          </div>
         </div>
-        <Button glow className="gap-2 h-11 px-6 font-bold uppercase tracking-widest" onClick={() => setIsUploading(true)}>
+        <Button glow className="gap-2 h-11 px-6 font-bold uppercase tracking-widest shrink-0" onClick={() => setIsUploading(true)}>
           <Upload className="w-4 h-4" />
           Upload File
         </Button>
@@ -87,7 +118,12 @@ const Files: React.FC = () => {
                 <Eye className="w-3 h-3" />
                 View
               </Button>
-              <Button variant="ghost" size="sm" className="flex-1 gap-2 text-xs font-bold uppercase tracking-widest">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex-1 gap-2 text-xs font-bold uppercase tracking-widest"
+                onClick={() => handleDownload(file)}
+              >
                 <Download className="w-3 h-3" />
                 Get
               </Button>
@@ -174,7 +210,10 @@ const Files: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-3">
-                <Button className="w-full h-12 gap-2 font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                <Button 
+                  className="w-full h-12 gap-2 font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20"
+                  onClick={() => handleDownload(selectedFile)}
+                >
                   <Download className="w-4 h-4" />
                   Download Document
                 </Button>

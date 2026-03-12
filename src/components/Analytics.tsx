@@ -15,16 +15,34 @@ import {
   Legend
 } from 'recharts';
 import { Card } from './Card';
-import { Transaction } from '@/src/types';
+import { Transaction, EXPENSE_CATEGORIES } from '@/src/types';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 interface AnalyticsProps {
   transactions: Transaction[];
 }
 
-const COLORS = ['#10b981', '#f43f5e', '#0ea5e9', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
-
 const Analytics: React.FC<AnalyticsProps> = ({ transactions }) => {
+  // Helper to get color from category
+  const getCategoryColor = (label: string) => {
+    const cat = EXPENSE_CATEGORIES.find(c => c.label === label);
+    if (!cat) return '#6366f1'; // Default
+    
+    // Map tailwind text classes to hex
+    const colorMap: Record<string, string> = {
+      'text-orange-500': '#f97316',
+      'text-blue-500': '#3b82f6',
+      'text-rose-500': '#f43f5e',
+      'text-amber-600': '#d97706',
+      'text-zinc-400': '#a1a1aa',
+      'text-emerald-600': '#059669',
+      'text-pink-500': '#ec4899',
+      'text-red-500': '#ef4444',
+      'text-fuchsia-500': '#d946ef',
+      'text-zinc-500': '#71717a'
+    };
+    return colorMap[cat.color] || '#6366f1';
+  };
   // Monthly Data for Bar Chart
   const last6Months = Array.from({ length: 6 }).map((_, i) => {
     const date = subMonths(new Date(), i);
@@ -82,7 +100,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ transactions }) => {
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false} 
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `₹${value}`}
               />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#09090b', border: '1px solid #1f2937', borderRadius: '8px' }}
@@ -111,7 +129,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ transactions }) => {
                 dataKey="value"
               >
                 {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name)} />
                 ))}
               </Pie>
               <Tooltip 
@@ -148,7 +166,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ transactions }) => {
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false} 
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `₹${value}`}
               />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#09090b', border: '1px solid #1f2937', borderRadius: '8px' }}

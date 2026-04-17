@@ -11,19 +11,19 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', glow = false, ...props }, ref) => {
     const variants = {
-      primary: 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm',
-      secondary: 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700 shadow-sm',
+      primary: 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm border border-emerald-400/20',
+      secondary: 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700 shadow-sm border border-zinc-700/50',
       outline: 'border border-zinc-700 bg-transparent text-zinc-100 hover:bg-zinc-800',
       ghost: 'bg-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100',
-      danger: 'bg-rose-600 text-white hover:bg-rose-700 shadow-sm',
+      danger: 'bg-rose-600 text-white hover:bg-rose-500 shadow-sm border border-rose-400/20',
     };
 
     const glowStyles = {
-      primary: 'shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]',
+      primary: 'shadow-[0_0_20px_rgba(16,185,129,0.2),0_0_40px_rgba(16,185,129,0.1)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3),0_0_50px_rgba(16,185,129,0.15)] shine-effect',
       secondary: 'shadow-[0_0_20px_rgba(39,39,42,0.2)]',
       outline: '',
       ghost: '',
-      danger: 'shadow-[0_0_20px_rgba(225,29,72,0.2)] hover:shadow-[0_0_25px_rgba(225,29,72,0.3)]',
+      danger: 'shadow-[0_0_20px_rgba(225,29,72,0.2),0_0_40px_rgba(225,29,72,0.1)] hover:shadow-[0_0_25px_rgba(225,29,72,0.3),0_0_50px_rgba(225,29,72,0.15)] shine-effect',
     };
 
     const sizes = {

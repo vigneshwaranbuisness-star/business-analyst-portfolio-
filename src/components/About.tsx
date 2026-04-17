@@ -41,14 +41,10 @@ const About: React.FC = () => {
         <div className="lg:col-span-2">
           <div className="relative aspect-square rounded-full overflow-hidden border-4 border-zinc-800 group shadow-2xl shadow-emerald-500/10 max-w-[320px] mx-auto lg:mx-0">
             <img 
-              src="/profile.jpg" 
+              src="input_file_0.png" 
               alt="R. Vigneshwaran" 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               referrerPolicy="no-referrer"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Vigneshwaran";
-              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>

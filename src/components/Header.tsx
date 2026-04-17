@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { Bell, Search, User, X, Check, Clock } from 'lucide-react';
+import { Bell, Search, User, X, Check, Clock, Menu } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { Card } from './Card';
 import { Button } from './Button';
 
 interface HeaderProps {
   title: string;
+  onMenuClick?: () => void;
   user?: {
     displayName?: string;
     email?: string;
@@ -13,7 +14,7 @@ interface HeaderProps {
   } | null;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, user }) => {
+const Header: React.FC<HeaderProps> = ({ title, user, onMenuClick }) => {
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [notifications, setNotifications] = React.useState([
     { id: 1, title: 'New Transaction', desc: 'Received ₹1,200 from Client A', time: '2m ago', read: false },
@@ -43,16 +44,24 @@ const Header: React.FC<HeaderProps> = ({ title, user }) => {
   }, []);
 
   return (
-    <header className="h-16 border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-8">
-      <div className="flex items-center gap-4">
-        <h2 className="text-xl font-bold text-white tracking-tight">{title}</h2>
+    <header className="h-16 border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-4 sm:px-8">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="lg:hidden h-10 w-10 text-zinc-400"
+          onClick={onMenuClick}
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
+        <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight truncate max-w-[120px] sm:max-w-none">{title}</h2>
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/50 border border-zinc-800 text-zinc-500 text-xs font-medium">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           Live Analysis
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 sm:gap-6">
         <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 focus-within:ring-2 focus-within:ring-emerald-500 transition-all duration-200">
           <Search className="w-4 h-4 text-zinc-500" />
           <input 
@@ -62,13 +71,13 @@ const Header: React.FC<HeaderProps> = ({ title, user }) => {
           />
         </div>
 
-        <div className="flex items-center gap-4 border-l border-zinc-800 pl-6 relative" ref={dropdownRef}>
+        <div className="flex items-center gap-2 sm:gap-4 sm:border-l sm:border-zinc-800 sm:pl-6 relative" ref={dropdownRef}>
           <Button 
             variant="ghost"
             size="icon"
             onClick={() => setShowNotifications(!showNotifications)}
             className={cn(
-              "relative rounded-xl transition-all duration-300",
+              "relative rounded-xl transition-all duration-300 h-10 w-10",
               showNotifications ? "bg-emerald-500/10 text-emerald-500 ring-2 ring-emerald-500/20" : "text-zinc-400 hover:text-zinc-100"
             )}
             title="Notifications"
@@ -80,7 +89,7 @@ const Header: React.FC<HeaderProps> = ({ title, user }) => {
           </Button>
 
           {showNotifications && (
-            <Card className="absolute top-full right-0 mt-4 w-85 p-0 bg-zinc-950 border-zinc-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 overflow-hidden z-50">
+            <Card className="absolute top-full right-0 mt-4 w-[280px] sm:w-85 p-0 bg-zinc-950 border-zinc-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 overflow-hidden z-50">
               <div className="p-5 border-b border-zinc-900 flex items-center justify-between bg-zinc-900/20">
                 <div>
                   <h3 className="text-xs font-bold text-white uppercase tracking-[0.2em] mb-1">Notifications</h3>

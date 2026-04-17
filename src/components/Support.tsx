@@ -25,7 +25,7 @@ const Support: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(e.target as HTMLFormElement);
     const name = formData.get('name');
     const email = formData.get('email');
     const subject = formData.get('subject');

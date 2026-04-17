@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { Input } from './Input';
 import { Button } from './Button';
 import { Card } from './Card';
-import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, TransactionType } from '@/src/types';
+import { CategoryInfo, TransactionType, ICON_MAP } from '@/src/types';
 import { IndianRupee, Tag, FileText, Calendar, Upload, Paperclip, CheckCircle2, Plus } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
@@ -26,13 +26,20 @@ type TransactionFormValues = {
 };
 
 interface QuickAddFormProps {
+  incomeCategories: CategoryInfo[];
+  expenseCategories: CategoryInfo[];
   onSubmit: (values: any) => void;
   isLoading?: boolean;
 }
 
-const QuickAddForm: React.FC<QuickAddFormProps> = ({ onSubmit, isLoading }) => {
+const QuickAddForm: React.FC<QuickAddFormProps> = ({ 
+  incomeCategories, 
+  expenseCategories, 
+  onSubmit, 
+  isLoading 
+}) => {
   const [type, setType] = React.useState<TransactionType>('income');
-  const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const categories = type === 'income' ? incomeCategories : expenseCategories;
   
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -139,27 +146,30 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onSubmit, isLoading }) => {
             Category
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat.label}
-                type="button"
-                onClick={() => setValue('category', cat.label)}
-                className={cn(
-                  "flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 group",
-                  selectedCategory === cat.label
-                    ? "bg-emerald-500/10 border-emerald-500 text-emerald-500"
-                    : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
-                )}
-              >
-                <cat.icon className={cn(
-                  "w-4 h-4 mb-1 transition-transform group-hover:scale-110",
-                  selectedCategory === cat.label ? "text-emerald-500" : "text-zinc-500 group-hover:text-zinc-400"
-                )} />
-                <span className="text-[8px] font-bold uppercase tracking-tighter text-center leading-tight truncate w-full">
-                  {cat.label}
-                </span>
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const Icon = ICON_MAP[cat.iconName] || Plus;
+              return (
+                <button
+                  key={cat.label}
+                  type="button"
+                  onClick={() => setValue('category', cat.label)}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 group",
+                    selectedCategory === cat.label
+                      ? "bg-emerald-500/10 border-emerald-500 text-emerald-500"
+                      : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                  )}
+                >
+                  <Icon className={cn(
+                    "w-4 h-4 mb-1 transition-transform group-hover:scale-110",
+                    selectedCategory === cat.label ? "text-emerald-500" : "text-zinc-500 group-hover:text-zinc-400"
+                  )} />
+                  <span className="text-[8px] font-bold uppercase tracking-tighter text-center leading-tight truncate w-full">
+                    {cat.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <input type="hidden" {...register('category')} />
           {errors.category && <p className="text-[10px] font-medium text-rose-500 ml-1">{errors.category.message}</p>}

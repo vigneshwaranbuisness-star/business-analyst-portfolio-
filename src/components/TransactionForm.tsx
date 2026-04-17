@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { Input } from './Input';
 import { Button } from './Button';
 import { Card } from './Card';
-import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, Transaction, TransactionType } from '@/src/types';
+import { CategoryInfo, Transaction, TransactionType, ICON_MAP } from '@/src/types';
 import { X, IndianRupee, Tag, FileText, Calendar, Upload, Paperclip, CheckCircle2, Plus } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
@@ -27,14 +27,24 @@ type TransactionFormValues = {
 
 interface TransactionFormProps {
   type: TransactionType;
+  incomeCategories: CategoryInfo[];
+  expenseCategories: CategoryInfo[];
   initialData?: Transaction;
   onSubmit: (values: any, stayOpen?: boolean) => void;
   onClose: () => void;
   isLoading?: boolean;
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, onSubmit, onClose, isLoading }) => {
-  const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+const TransactionForm: React.FC<TransactionFormProps> = ({ 
+  type, 
+  incomeCategories, 
+  expenseCategories, 
+  initialData, 
+  onSubmit, 
+  onClose, 
+  isLoading 
+}) => {
+  const categories = type === 'income' ? incomeCategories : expenseCategories;
   
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -106,9 +116,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, on
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-      <Card className="w-full max-w-lg p-0 bg-zinc-950 border-zinc-900 shadow-2xl animate-in fade-in zoom-in duration-200">
-        <div className="p-6 border-b border-zinc-900 flex items-center justify-between">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-zinc-950/80 backdrop-blur-sm overflow-y-auto">
+      <Card className="w-full sm:max-w-lg h-full sm:h-auto min-h-screen sm:min-h-0 p-0 bg-zinc-950 border-0 sm:border border-zinc-900 shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="p-4 sm:p-6 border-b border-zinc-900 flex items-center justify-between sticky top-0 bg-zinc-950 z-20">
           <div className="flex items-center gap-3">
             <div className={cn(
               'p-2 rounded-lg border',
@@ -125,170 +135,175 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ type, initialData, on
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit((data) => onFormSubmit(data, false))} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="relative group">
-              <IndianRupee className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
-              <Input 
-                label="Amount" 
-                type="number" 
-                step="0.01"
-                placeholder="0.00" 
-                className="pl-10"
-                {...register('amount')}
-                error={errors.amount?.message}
-              />
-            </div>
-
-            <div className="space-y-3 sm:col-span-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
-                Select Category
-              </label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.label}
-                    type="button"
-                    onClick={() => setValue('category', cat.label)}
-                    className={cn(
-                      "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 group",
-                      selectedCategory === cat.label
-                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
-                    )}
-                  >
-                    <cat.icon className={cn(
-                      "w-6 h-6 mb-2 transition-transform duration-300 group-hover:scale-110",
-                      selectedCategory === cat.label ? "text-emerald-500" : "text-zinc-500 group-hover:text-zinc-400"
-                    )} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-center leading-tight">
-                      {cat.label}
-                    </span>
-                  </button>
-                ))}
+        <form onSubmit={handleSubmit((data) => onFormSubmit(data, false))} className="flex flex-col flex-1">
+          <div className="p-6 space-y-6 flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="relative group">
+                <IndianRupee className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+                <Input 
+                  label="Amount" 
+                  type="number" 
+                  step="0.01"
+                  placeholder="0.00" 
+                  className="pl-10"
+                  {...register('amount')}
+                  error={errors.amount?.message}
+                />
               </div>
-              <input type="hidden" {...register('category')} />
-              {errors.category && <p className="text-xs font-medium text-rose-500 ml-1">{errors.category.message}</p>}
-            </div>
-          </div>
 
-          {isOtherSelected && (
-            <div className="relative group animate-in slide-in-from-top-2 duration-200">
-              <Plus className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
-              <Input 
-                label="Custom Category" 
-                placeholder="Type your category name" 
-                className="pl-10"
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                required
-              />
-            </div>
-          )}
-
-          <div className="relative group">
-            <Calendar className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
-            <Input 
-              label="Date" 
-              type="date" 
-              className="pl-10"
-              {...register('date')}
-              error={errors.date?.message}
-            />
-          </div>
-
-          <div className="relative group">
-            <FileText className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
-            <Input 
-              label="Description" 
-              placeholder="What was this for?" 
-              className="pl-10"
-              {...register('description')}
-              error={errors.description?.message}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                Receipt / Bill (Optional)
-              </label>
-              {showSuccess && (
-                <div className="flex items-center gap-1.5 text-emerald-500 animate-in fade-in slide-in-from-right-2 duration-300">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Receipt uploaded successfully!</span>
+              <div className="space-y-3 sm:col-span-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                  Select Category
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                  {categories.map((cat) => {
+                    const Icon = ICON_MAP[cat.iconName] || Plus;
+                    return (
+                      <button
+                        key={cat.label}
+                        type="button"
+                        onClick={() => setValue('category', cat.label)}
+                        className={cn(
+                          "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 group",
+                          selectedCategory === cat.label
+                            ? "bg-emerald-500/10 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                            : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                        )}
+                      >
+                        <Icon className={cn(
+                          "w-6 h-6 mb-2 transition-transform duration-300 group-hover:scale-110",
+                          selectedCategory === cat.label ? "text-emerald-500" : "text-zinc-500 group-hover:text-zinc-400"
+                        )} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-center leading-tight">
+                          {cat.label}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+                <input type="hidden" {...register('category')} />
+                {errors.category && <p className="text-xs font-medium text-rose-500 ml-1">{errors.category.message}</p>}
+              </div>
             </div>
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className={cn(
-                "group relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl transition-all cursor-pointer",
-                receiptBase64 
-                  ? "border-emerald-500/50 bg-emerald-500/5" 
-                  : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:bg-zinc-900"
-              )}
-            >
-              <input 
-                type="file" 
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*,.pdf"
-                className="hidden"
-              />
-              
-              {receiptBase64 ? (
-                <div className="flex flex-col items-center gap-2 p-4">
-                  <div className="p-2 rounded-full bg-emerald-500/20 text-emerald-500">
-                    <Paperclip className="w-5 h-5" />
+
+            {isOtherSelected && (
+              <div className="relative group animate-in slide-in-from-top-2 duration-200">
+                <Plus className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+                <Input 
+                  label="Custom Category" 
+                  placeholder="Type your category name" 
+                  className="pl-10"
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="relative group">
+                <Calendar className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+                <Input 
+                  label="Date" 
+                  type="date" 
+                  className="pl-10"
+                  {...register('date')}
+                  error={errors.date?.message}
+                />
+              </div>
+
+              <div className="relative group">
+                <FileText className="absolute left-3 top-9 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-500 transition-colors z-10" />
+                <Input 
+                  label="Description" 
+                  placeholder="What was this for?" 
+                  className="pl-10"
+                  {...register('description')}
+                  error={errors.description?.message}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  Receipt / Bill (Optional)
+                </label>
+                {showSuccess && (
+                  <div className="flex items-center gap-1.5 text-emerald-500 animate-in fade-in slide-in-from-right-2 duration-300">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Uploaded!</span>
                   </div>
-                  <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Receipt Attached</p>
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setReceiptBase64(undefined);
-                    }}
-                    className="text-[10px] text-zinc-500 hover:text-zinc-300 underline underline-offset-2"
-                  >
-                    Remove and replace
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 p-4">
-                  <div className="p-2 rounded-full bg-zinc-800 text-zinc-500 group-hover:text-zinc-300 transition-colors">
-                    <Upload className="w-5 h-5" />
+                )}
+              </div>
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "group relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl transition-all cursor-pointer",
+                  receiptBase64 
+                    ? "border-emerald-500/50 bg-emerald-500/5" 
+                    : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:bg-zinc-900"
+                )}
+              >
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*,.pdf"
+                  className="hidden"
+                />
+                
+                {receiptBase64 ? (
+                  <div className="flex flex-col items-center gap-2 p-4">
+                    <div className="p-2 rounded-full bg-emerald-500/20 text-emerald-500">
+                      <Paperclip className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Receipt Attached</p>
                   </div>
-                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors">Click to upload receipt</p>
-                  <p className="text-[10px] text-zinc-600">Max size 2MB (Image or PDF)</p>
-                </div>
-              )}
+                ) : (
+                  <div className="flex flex-col items-center gap-2 p-4 text-center">
+                    <div className="p-2 rounded-full bg-zinc-800 text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors">Click to upload receipt</p>
+                    <p className="text-[10px] text-zinc-600">Max size 2MB</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 pt-2">
+          <div className="sticky bottom-0 bg-zinc-950 border-t border-zinc-900 p-4 sm:p-6 space-y-3 z-30 mt-auto">
             <div className="flex gap-3">
               <Button 
                 type="submit" 
-                className="flex-1 h-11 font-bold uppercase tracking-widest" 
+                className="flex-1 h-12 font-bold uppercase tracking-widest" 
                 disabled={isLoading}
-                onClick={handleSubmit((data) => onFormSubmit(data, false))}
               >
-                {isLoading ? 'Saving...' : initialData ? 'Update Transaction' : 'Save Transaction'}
+                {isLoading ? 'Saving...' : initialData ? 'Update' : 'Save'}
               </Button>
               {!initialData && (
                 <Button 
                   type="button" 
                   variant="outline"
-                  className="flex-1 h-11 font-bold uppercase tracking-widest border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10" 
+                  className="flex-1 h-12 font-bold uppercase tracking-widest border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10 px-2 text-[10px]" 
                   disabled={isLoading}
                   onClick={handleSubmit((data) => onFormSubmit(data, true))}
                 >
-                  Save & Add Another
+                  Save & New
                 </Button>
               )}
             </div>
-            <Button type="button" variant="ghost" className="w-full h-11 font-bold uppercase tracking-widest text-zinc-500" onClick={onClose}>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              className="w-full h-11 font-bold uppercase tracking-widest text-zinc-500 hover:text-rose-500" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+            >
               Cancel
             </Button>
           </div>

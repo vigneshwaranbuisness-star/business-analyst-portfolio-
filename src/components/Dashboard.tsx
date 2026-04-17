@@ -7,32 +7,39 @@ import {
   Plus, 
   Download,
   Calendar,
-  Filter
+  Filter,
+  TrendingUp
 } from 'lucide-react';
 import StatCard from './StatCard';
 import TransactionTable from './TransactionTable';
 import Analytics from './Analytics';
 import QuickAddForm from './QuickAddForm';
-import { Transaction, TransactionType } from '@/src/types';
+import { Transaction, TransactionType, CategoryInfo } from '@/src/types';
 import { Button } from './Button';
 import { Card } from './Card';
 import { cn } from '@/src/lib/utils';
 
 interface DashboardProps {
   transactions: Transaction[];
+  incomeCategories: CategoryInfo[];
+  expenseCategories: CategoryInfo[];
   onAddTransaction: (type: TransactionType) => void;
   onEditTransaction: (transaction: Transaction) => void;
   onDeleteTransaction: (id: string) => void;
   onQuickAdd: (values: any) => void;
+  onViewInsights?: () => void;
   isLoading?: boolean;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
   transactions, 
+  incomeCategories,
+  expenseCategories,
   onAddTransaction, 
   onEditTransaction, 
   onDeleteTransaction,
   onQuickAdd,
+  onViewInsights,
   isLoading
 }) => {
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
@@ -67,46 +74,46 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Financial Overview</h2>
-          <p className="text-sm text-zinc-500 font-medium">Track your business performance and growth</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            className="gap-2 h-11 px-6 font-bold uppercase tracking-widest"
-            onClick={handleExport}
-            disabled={transactions.length === 0}
-          >
-            <Download className="w-4 h-4" />
-            Export Report
-          </Button>
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-zinc-900 border border-zinc-800">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-4 bg-emerald-500/[0.03] rounded-2xl border border-emerald-500/10 mb-2">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Financial Overview</h2>
+            <p className="text-sm text-zinc-500 font-medium">Track your business performance and growth</p>
+          </div>
+          
+          <div className="flex flex-col xs:flex-row items-center gap-3 w-full sm:w-auto">
             <Button 
-              glow
-              className="gap-2 h-9 px-4 font-bold uppercase tracking-widest"
-              onClick={() => onAddTransaction('income')}
+              variant="outline" 
+              className="w-full xs:w-auto gap-2 h-12 px-6 font-bold uppercase tracking-widest text-xs"
+              onClick={handleExport}
+              disabled={transactions.length === 0}
             >
-              <Plus className="w-4 h-4" />
-              Income
+              <Download className="w-4 h-4" />
+              <span>Export CSV</span>
             </Button>
-            <Button 
-              glow
-              variant="danger"
-              className="gap-2 h-9 px-4 font-bold uppercase tracking-widest"
-              onClick={() => onAddTransaction('expense')}
-            >
-              <Plus className="w-4 h-4" />
-              Expense
-            </Button>
+            <div className="flex items-center gap-1 p-1.5 rounded-xl bg-zinc-900 border border-zinc-800 w-full xs:w-auto">
+              <Button 
+                glow
+                className="flex-1 xs:flex-none gap-2 h-9 px-5 font-bold uppercase tracking-widest text-[10px] group"
+                onClick={() => onAddTransaction('income')}
+              >
+                <Plus className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-300" />
+                Income
+              </Button>
+              <Button 
+                glow
+                variant="danger"
+                className="flex-1 xs:flex-none gap-2 h-9 px-5 font-bold uppercase tracking-widest text-[10px] group"
+                onClick={() => onAddTransaction('expense')}
+              >
+                <Plus className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-300" />
+                Expense
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Total Income" 
           value={`₹${totalIncome.toLocaleString()}`} 
@@ -137,18 +144,25 @@ const Dashboard: React.FC<DashboardProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-2 space-y-8">
-          <Analytics transactions={transactions} />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6">
+          <Analytics transactions={transactions} expenseCategories={expenseCategories} />
           <TransactionTable 
             transactions={transactions.slice(0, 5)} 
+            incomeCategories={incomeCategories}
+            expenseCategories={expenseCategories}
             onEdit={onEditTransaction} 
             onDelete={onDeleteTransaction} 
           />
         </div>
 
-        <div className="space-y-8">
-          <QuickAddForm onSubmit={onQuickAdd} isLoading={isLoading} />
+        <div className="space-y-6">
+          <QuickAddForm 
+            incomeCategories={incomeCategories}
+            expenseCategories={expenseCategories}
+            onSubmit={onQuickAdd} 
+            isLoading={isLoading} 
+          />
 
           <Card className="p-6 bg-zinc-950 border-zinc-900">
             <div className="flex items-center justify-between mb-6">
@@ -183,15 +197,20 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </Card>
 
-          <Card className="p-6 bg-emerald-600 relative overflow-hidden group">
+          <Card className="p-6 bg-emerald-600/10 border-emerald-500/20 relative overflow-hidden group shadow-lg shadow-emerald-500/5">
             <div className="relative z-10">
-              <h3 className="text-lg font-bold text-white mb-2 tracking-tight">Upgrade to Pro</h3>
-              <p className="text-emerald-100 text-sm mb-6 leading-relaxed">Get advanced analytics, unlimited file storage, and priority support.</p>
-              <Button className="w-full bg-white text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 font-bold uppercase tracking-widest">
-                Upgrade Now
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center mb-4">
+                <TrendingUp className="text-white w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2 tracking-tight">Smart AI Analysis</h3>
+              <p className="text-emerald-100/60 text-xs mb-6 leading-relaxed">Let Gemini AI analyze your transactions and suggest specialized optimizations for your business.</p>
+              <Button 
+                onClick={onViewInsights}
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold uppercase tracking-widest text-[10px]"
+              >
+                Access Analysis
               </Button>
             </div>
-            <div className="absolute -right-8 -bottom-8 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-500" />
           </Card>
         </div>
       </div>
